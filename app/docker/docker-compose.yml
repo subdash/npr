@@ -12,10 +12,13 @@ services:
         target: /usr/local/app/
     working_dir: /usr/local/app/
     entrypoint: ["sh", "docker/app-entrypoint.sh"]
-    networks:
-      - container_network
     environment:
-      REDIS_CONTAINER_NAME: "redis-local"
+      # For host (default) networking mode
+      REDIS_CONTAINER_NAME: "host.docker.internal"
+      # For bridge networking mode
+      CONTAINER_DATABASE_URL: postgresql://postgres@host.docker.internal:5432/local
+  #      CONTAINER_DATABASE_URL: postgresql://postgres@postgres:5432/local
+  # postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=SCHEMA
 
   redis-local:
     image: redis:alpine3.20
@@ -26,10 +29,9 @@ services:
         source: ${PWD}/redis.conf
         target: /usr/local/etc/redis/redis.conf
     entrypoint: redis-server /usr/local/etc/redis/redis.conf
-    networks:
-      - container_network
 
   postgres:
+    # For debugging from host: psql -h localhost -p 5432 -U postgres -w
     image: postgres:17.2-alpine3.20
     ports:
       - "5432:5432"
@@ -37,15 +39,18 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_DB: local
       POSTGRES_HOST_AUTH_METHOD: trust
-    networks:
-      - container_network
     volumes:
-      - pg-data:/var/lib/postgresql/data
+      - ./pg-data/database:/var/lib/postgresql/data
 
 volumes:
   redis.conf:
   pg-data:
 
 networks:
+  # For inter-container communication -- use network_mode: host
+  # to connect from host machine. To use in containers, add this
+  # to the service:
+  #  networks:
+  #    - container_network
   container_network:
     driver: bridge
