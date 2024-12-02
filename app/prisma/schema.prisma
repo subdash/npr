@@ -1,0 +1,20 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+// If container networking is set up to accept connections from
+// other containers as well as the host, then local development
+// can target the docker Postgres container. Otherwise, in order
+// to perform local development against the generated Prisma client,
+// we will need to run a local Postgres database and have a single
+// environment variable dictate the connection string, with different
+// values in the docker environment and the local environment.
+datasource db {
+  provider = "postgresql"
+  url      = env("CONTAINER_DATABASE_URL")
+}
+
+model User {
+  id    Int    @id @default(autoincrement())
+  email String
+}

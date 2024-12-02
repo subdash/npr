@@ -1,0 +1,51 @@
+services:
+  server:
+    depends_on:
+      - redis-local
+      - postgres
+    image: node:alpine3.20
+    ports:
+      - "3000:3000"
+    volumes:
+      - type: bind
+        source: ../../app
+        target: /usr/local/app/
+    working_dir: /usr/local/app/
+    entrypoint: ["sh", "docker/app-entrypoint.sh"]
+    networks:
+      - container_network
+    environment:
+      REDIS_CONTAINER_NAME: "redis-local"
+
+  redis-local:
+    image: redis:alpine3.20
+    ports:
+      - "6379:6379"
+    volumes:
+      - type: bind
+        source: ${PWD}/redis.conf
+        target: /usr/local/etc/redis/redis.conf
+    entrypoint: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - container_network
+
+  postgres:
+    image: postgres:17.2-alpine3.20
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: local
+      POSTGRES_HOST_AUTH_METHOD: trust
+    networks:
+      - container_network
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+
+volumes:
+  redis.conf:
+  pg-data:
+
+networks:
+  container_network:
+    driver: bridge
